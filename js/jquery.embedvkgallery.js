@@ -1,4 +1,10 @@
 (function($) {
+    var vkApi = 'https://api.vk.com/method/photos.get'
+    var proxyApi = 'https://7k0cvr7eaj.execute-api.us-east-1.amazonaws.com/dev/embed-vk-gallery'
+    // by default we point url to the proxy (in case developer hasn't added access_token)
+    var url = proxyApi
+    var access_token = ''
+
     $(function() {
         var nps = 'EmbedVkGallery';
         $[nps] = {
@@ -32,6 +38,7 @@
         }
 
         $.fn[nps] = function(opts) {
+            var self = this
             opts = opts || {};
             opts = (typeof(opts) !== 'object' ) ? {link:opts} : opts;
             var localOpts = $.extend({}, $[nps], opts),
@@ -61,7 +68,8 @@
                  * photo_sizes=1 returns special formats
                  * https://vk.com/dev/photo_sizes
                  */
-                var query = 'https://embedvkgallery.help-master.net/vkgallery.php?&photo_sizes=1&extended=1&album_id=' + res[2]
+                var query = url + '?&photo_sizes=1&extended=1&album_id=' + res[2]
+                    + '&access_token=' + access_token
                     + '&count=1000'
                     + '&owner_id=' + res[1]
                     + '&rev=' + meta_opts.rev
@@ -279,7 +287,16 @@
                     renderAlbumList(json);
                 }
             }
-            return this.each(showAlbum);
+
+            // check if developer added access_token in access_token.txt
+            $.get('/access_token.txt').done(function(token) {
+                // set received token
+                access_token = token
+                // set url directly to vk api server
+                url = vkApi
+            }).always(function() {
+                return self.each(showAlbum);      
+            })
         };
     });
 })(jQuery);
